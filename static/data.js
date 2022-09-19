@@ -20,24 +20,27 @@ wsConnection.onmessage = (e) => {
           newData+=String.fromCharCode(element);
         });
         console.log('newData ', newData);
-        console.log("ws signal");
         var dat = JSON.parse(newData);
-        signal(dat.id, dat.data);
+        switch (dat.type) {
+            case 'signal':
+                console.log("ws signal");
+                signal(dat.id, dat.data);
+                break;
+        }
     }
-    let data = JSON.parse(e.data);
-    console.log("TYPE: ", data.type);
-    switch (data.type) {
-        case 'connection':
-            localId = data.id;
-            break;
-        case 'ids':
-            peerIds = data.ids;
-            connect();
-            break;
-        case 'signal':
-            console.log("ws signal");
-            signal(data.id, data.data);
-            break;
+    else
+    {
+        let data = JSON.parse(e.data);
+        console.log("TYPE: ", data.type);
+        switch (data.type) {
+            case 'connection':
+                localId = data.id;
+                break;
+            case 'ids':
+                peerIds = data.ids;
+                connect();
+                break;
+        }
     }
 };
 
@@ -50,6 +53,7 @@ function connect() {
         }
     });
     if (peerIds.length === 1) {
+        console.log("initiator");
         initiator = true;
     }
     peerIds.forEach(id => {
@@ -72,7 +76,6 @@ function connect() {
         });
         peer.on('connect', () => {
             console.log('CONNECT')
-            peer.send('whatever' + Math.random());
           })
         peer.on('data', (data) => onPeerData(id, data));
         peerConnections[id] = peer;

@@ -2,13 +2,27 @@ var express = require('express');
 var http = require('http');
 var ws = require('ws');
 var uuid = require('uuid');
+var path = require('path');
 
 const app = express();
-app.use(express.static(`${__dirname}/static`));
+app.use('/static', express.static(`${__dirname}/static`));
 app.locals.connections = [];
 
 const server = http.createServer(app);
 const wss = new ws.Server({ server });
+
+// starting index
+app.locals.index = 100000000000;
+
+app.get('/', (req, res) => {
+    app.locals.index++;
+    let id = app.locals.index.toString(36);
+    res.redirect(`/${id}`);
+});
+
+app.get('/:roomId', (req, res) => {
+    res.sendFile(path.join(__dirname, 'static/index.html'));
+});
 
 function broadcastConnections() {
     let ids = app.locals.connections.map(c => c._connId);
@@ -47,10 +61,6 @@ wss.on('connection', (ws) => {
         }
     });
 
-});
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'static/index.html'));
 });
 
 server.listen(process.env.PORT || 8081, () => {

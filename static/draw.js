@@ -26,6 +26,7 @@ function draw(data) {
 
 function onPeerData(id, data) {
     console.log(`data from ${id}`, data);
+    console.log(`data from ${id} parsed`, JSON.parse(data))
     draw(JSON.parse(data));
 }
 
