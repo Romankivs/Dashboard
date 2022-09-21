@@ -37,14 +37,21 @@ wsConnection.onmessage = (e) => {
                 localId = data.id;
                 break;
             case 'ids':
-                peerIds = data.ids;
-                connect();
+                peerIds = data.listOfIds;
+                if (data.sendOffersId === localId)
+                {
+                    connect(true);
+                }
+                else
+                {
+                    connect(false);
+                }
                 break;
         }
     }
 };
 
-function connect() {
+function connect(sendOffers = false) {
     // cleanup peer connections not in peer ids
     Object.keys(peerConnections).forEach(id => {
         if (!peerIds.includes(id)) {
@@ -52,9 +59,14 @@ function connect() {
             delete peerConnections[id];
         }
     });
-    if (peerIds.length === 1) {
+    if (sendOffers) {
         console.log("initiator");
         initiator = true;
+    }
+    else
+    {
+        console.log("not initiator");
+        initiator = false;
     }
     peerIds.forEach(id => {
         if (id === localId || peerConnections[id]) {
@@ -71,6 +83,7 @@ function connect() {
             wsConnection.send(JSON.stringify({
                 type: 'signal',
                 id: localId,
+                toId : id,
                 data
             }));
         });
@@ -90,6 +103,6 @@ function signal(id, data) {
 
 function broadcast(data) {
     Object.values(peerConnections).forEach(peer => {
-        peer.send(data);
+        peer.write(data);
     });
 }

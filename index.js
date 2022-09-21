@@ -24,10 +24,11 @@ app.get('/:roomId', (req, res) => {
     res.sendFile(path.join(__dirname, 'static/index.html'));
 });
 
-function broadcastConnections() {
+function broadcastConnections(sendOffersId = null) {
+    console.log(`broadcast ${sendOffersId}`);
     let ids = app.locals.connections.map(c => c._connId);
     app.locals.connections.forEach(c => {
-        c.send(JSON.stringify({ type: 'ids', ids }));
+        c.send(JSON.stringify({ type: 'ids', sendOffersId: sendOffersId, listOfIds: ids }));
     });
 }
 
@@ -40,7 +41,7 @@ wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'connection', id: ws._connId }));
 
     // send the list of connection ids
-    broadcastConnections();
+    broadcastConnections(ws._connId);
 
     ws.on('close', () => {
         console.log("the client has connected");
@@ -54,7 +55,7 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         console.log(`Client has sent us: ${message}`)
         for (let i = 0; i < app.locals.connections.length; i++) {
-            if (app.locals.connections[i] !== ws) {
+            if (app.locals.connections[i] !== ws && JSON.parse(message).toId === app.locals.connections[i]._connId) {
                 console.log(`We send: ${message}`)
                 app.locals.connections[i].send(JSON.stringify(message));
             }
