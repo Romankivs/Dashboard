@@ -64,6 +64,8 @@ wss.on('connection', (ws) => {
 
 });
 
+console.log(process.env.PORT);
+
 server.listen(process.env.PORT || 8081, () => {
     console.log(`Started server on port ${server.address().port}`);
 });
