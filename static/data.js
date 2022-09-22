@@ -1,6 +1,6 @@
-const wsConnection = new WebSocket('ws:127.0.0.1:8081', 'json');
+const wsConnection = new WebSocket('ws:https://dashboard-lab1.herokuapp.com:8081', 'json');
 wsConnection.onopen = (e) => {
-    console.log(`wsConnection open to 127.0.0.1:8081`, e);
+    console.log(`wsConnection open to https://dashboard-lab1.herokuapp.com:8081`, e);
 };
 wsConnection.onerror = (e) => {
     console.error(`wsConnection error `, e);
