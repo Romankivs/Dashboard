@@ -5,22 +5,15 @@ var uuid = require('uuid');
 var path = require('path');
 
 const app = express();
+
 app.use('/static', express.static(`${__dirname}/static`));
+
 app.locals.connections = [];
 
 const server = http.createServer(app);
 const wss = new ws.Server({ server });
 
-// starting index
-app.locals.index = 100000000000;
-
 app.get('/', (req, res) => {
-    app.locals.index++;
-    let id = app.locals.index.toString(36);
-    res.redirect(`/${id}`);
-});
-
-app.get('/:roomId', (req, res) => {
     res.sendFile(path.join(__dirname, 'static/index.html'));
 });
 
@@ -33,30 +26,30 @@ function broadcastConnections(sendOffersId = null) {
 }
 
 wss.on('connection', (ws) => {
-    console.log("new client connected");
+    console.log("new websocket client connected");
     app.locals.connections.push(ws);
     ws._connId = `conn-${uuid.v4()}`;
 
-    // send the local id for the connection
+    // give client his id
     ws.send(JSON.stringify({ type: 'connection', id: ws._connId }));
 
-    // send the list of connection ids
+    // update list of connection to clients
     broadcastConnections(ws._connId);
 
     ws.on('close', () => {
-        console.log("the client has connected");
+        console.log("websocket client has disconnected");
         let index = app.locals.connections.indexOf(ws);
         app.locals.connections.splice(index, 1);
 
-        // send the list of connection ids
+        // update list of connection to clients
         broadcastConnections();
     });
 
     ws.on('message', (message) => {
-        console.log(`Client has sent us: ${message}`)
+        console.log(`websocket client has sent us: ${message}`)
         for (let i = 0; i < app.locals.connections.length; i++) {
             if (app.locals.connections[i] !== ws && JSON.parse(message).toId === app.locals.connections[i]._connId) {
-                console.log(`We send: ${message}`)
+                console.log(`we send to clients: ${message}`)
                 app.locals.connections[i].send(JSON.stringify(message));
             }
         }
@@ -64,8 +57,6 @@ wss.on('connection', (ws) => {
 
 });
 
-console.log(process.env.PORT);
-
 server.listen(process.env.PORT || 8081, () => {
-    console.log(`Started server on port ${server.address().port}`);
+    console.log(`started server on port ${server.address().port}`);
 });

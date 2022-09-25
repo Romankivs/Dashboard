@@ -1,9 +1,8 @@
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext('2d');
 
-var nodes = [];
 var lastPoint = null;
-var force = 1;
+var lineWidth = 3;
 
 function randomColor() {
     let r = Math.random() * 255;
@@ -19,14 +18,14 @@ function draw(data) {
     context.moveTo(data.lastPoint.x, data.lastPoint.y);
     context.lineTo(data.x, data.y);
     context.strokeStyle = data.color;
-    context.lineWidth = Math.pow(data.force || 1, 4) * 2;
+    context.lineWidth = data.lineWidth;
     context.lineCap = 'round';
     context.stroke();
 }
 
 function onPeerData(id, data) {
-    console.log(`data from ${id}`, data);
-    console.log(`data from ${id} parsed`, JSON.parse(data))
+    console.log(`peer data from ${id}`, data);
+    console.log(`peer data from ${id} parsed`, JSON.parse(data))
     draw(JSON.parse(data));
 }
 
@@ -46,16 +45,16 @@ function move(e) {
             lastPoint,
             x: e.offsetX,
             y: e.offsetY,
-            force: force,
-            color: color || 'green'
+            lineWidth: lineWidth,
+            color: color
         });
 
         broadcast(JSON.stringify({
             lastPoint,
             x: e.offsetX,
             y: e.offsetY,
-            color: color || 'green',
-            force: force
+            color: color,
+            lineWidth: lineWidth
         }));
 
         lastPoint = { x: e.offsetX, y: e.offsetY };

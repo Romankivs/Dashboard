@@ -1,11 +1,13 @@
 var HOST = location.origin.replace(/^http/, 'ws')
 
 const wsConnection = new WebSocket(HOST, 'json');
+
 wsConnection.onopen = (e) => {
-    console.log(`wsConnection open to ${HOST}`, e);
+    console.log(`websocket connection open to ${HOST}`, e);
 };
+
 wsConnection.onerror = (e) => {
-    console.error(`wsConnection error `, e);
+    console.error(`websocket connection error `, e);
 };
 
 var localId, peerIds;
@@ -13,47 +15,36 @@ var peerConnections = {};
 var initiator = false;
 
 wsConnection.onmessage = (e) => {
-    console.log(`We received: ${e.data}`)
-    const arr = JSON.parse(e.data).data;
-    if (arr)
+    console.log(`websocket received: ${e.data}`)
+    let data = JSON.parse(e.data).data;
+    if (data)
     {
         let newData = '';
-        arr.forEach((element) => {
+        data.forEach((element) => {
           newData+=String.fromCharCode(element);
         });
-        console.log('newData ', newData);
-        var dat = JSON.parse(newData);
-        switch (dat.type) {
-            case 'signal':
-                console.log("ws signal");
-                signal(dat.id, dat.data);
-                break;
-        }
+        data = JSON.parse(newData);
     }
     else
     {
-        let data = JSON.parse(e.data);
-        console.log("TYPE: ", data.type);
-        switch (data.type) {
-            case 'connection':
-                localId = data.id;
-                break;
-            case 'ids':
-                peerIds = data.listOfIds;
-                if (data.sendOffersId === localId)
-                {
-                    connect(true);
-                }
-                else
-                {
-                    connect(false);
-                }
-                break;
-        }
+        data = JSON.parse(e.data);
+    }
+    console.log("TYPE: ", data.type);
+    switch (data.type) {
+        case 'connection':
+            localId = data.id;
+            break;
+        case 'ids':
+            peerIds = data.listOfIds;
+            connect(data.sendOffersId === localId);
+            break;
+        case 'signal':
+            signal(data.id, data.data);
+            break;
     }
 };
 
-function connect(sendOffers = false) {
+function connect(initiator = false) {
     // cleanup peer connections not in peer ids
     Object.keys(peerConnections).forEach(id => {
         if (!peerIds.includes(id)) {
@@ -61,23 +52,17 @@ function connect(sendOffers = false) {
             delete peerConnections[id];
         }
     });
-    if (sendOffers) {
-        console.log("initiator");
-        initiator = true;
-    }
-    else
-    {
-        console.log("not initiator");
-        initiator = false;
-    }
+    console.log(`initiator: ${initiator}`);
     peerIds.forEach(id => {
         if (id === localId || peerConnections[id]) {
             return;
         }
 
+        console.log("NEW PEER");
+
         let peer = new SimplePeer({
             initiator: initiator,
-            config: {   iceServers: [
+            config: { iceServers: [
                 {
                   urls: "stun:openrelay.metered.ca:80",
                 },
@@ -96,9 +81,9 @@ function connect(sendOffers = false) {
                   username: "openrelayproject",
                   credential: "openrelayproject",
                 },
-              ],},
+              ]}
         });
-        console.log("NEW PEER");
+
         peer.on('error', console.error);
         peer.on('signal', data => {
             console.log('SIGNAL');
