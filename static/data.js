@@ -1,48 +1,60 @@
-var HOST = location.origin.replace(/^http/, 'ws')
+let HOST = location.origin.replace(/^http/, 'ws')
 
-const wsConnection = new WebSocket(HOST, 'json');
+let localId;
+let peerIds;
+let peerConnections = {};
+let initiator = false;
 
-wsConnection.onopen = (e) => {
-    console.log(`websocket connection open to ${HOST}`, e);
-};
+let wsConnection;
 
-wsConnection.onerror = (e) => {
-    console.error(`websocket connection error `, e);
-};
+function setupWSConnection() {
+    wsConnection = new WebSocket(HOST, 'json');
 
-var localId, peerIds;
-var peerConnections = {};
-var initiator = false;
+    wsConnection.onopen = (e) => {
+        console.log(`websocket connection open to ${HOST}`, e);
+    };
+    
+    wsConnection.onerror = (e) => {
+        console.error(`websocket connection error `, e);
+    };
+    
+    wsConnection.onclose = (e) => {
+        setTimeout(setupWSConnection, 500);
+    };
+    
+    wsConnection.onmessage = (e) => {
+        console.log(`websocket received: ${e.data}`)
+        let data = JSON.parse(e.data).data;
+        if (data)
+        {
+            let newData = '';
+            data.forEach((element) => {
+              newData+=String.fromCharCode(element);
+            });
+            data = JSON.parse(newData);
+        }
+        else
+        {
+            data = JSON.parse(e.data);
+        }
+        console.log("TYPE: ", data.type);
+        switch (data.type) {
+            case 'connection':
+                localId = data.id;
+                break;
+            case 'ids':
+                peerIds = data.listOfIds;
+                connect(data.sendOffersId === localId);
+                break;
+            case 'signal':
+                signal(data.id, data.data);
+                break;
+        }
+    };
 
-wsConnection.onmessage = (e) => {
-    console.log(`websocket received: ${e.data}`)
-    let data = JSON.parse(e.data).data;
-    if (data)
-    {
-        let newData = '';
-        data.forEach((element) => {
-          newData+=String.fromCharCode(element);
-        });
-        data = JSON.parse(newData);
-    }
-    else
-    {
-        data = JSON.parse(e.data);
-    }
-    console.log("TYPE: ", data.type);
-    switch (data.type) {
-        case 'connection':
-            localId = data.id;
-            break;
-        case 'ids':
-            peerIds = data.listOfIds;
-            connect(data.sendOffersId === localId);
-            break;
-        case 'signal':
-            signal(data.id, data.data);
-            break;
-    }
-};
+}
+
+setupWSConnection();
 
 function connect(initiator = false) {
     // cleanup peer connections not in peer ids
