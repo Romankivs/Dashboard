@@ -36,9 +36,9 @@ function resize() {
 }
 
 function resizeWithoutClear() {
-    let img = context.getImageData(0, 0, context.width, context.height);
+    let img = context.getImageData(0, 0, canvas.width, canvas.height);
     resize();
-    context.putImageData(img);
+    context.putImageData(img, 0, 0);
 }
 
 function move(e) {

@@ -19,6 +19,7 @@ function setupWSConnection() {
     };
     
     wsConnection.onclose = (e) => {
+        peerConnections = {};
         setupWSConnection();
     };
     
