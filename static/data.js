@@ -19,7 +19,7 @@ function setupWSConnection() {
     };
     
     wsConnection.onclose = (e) => {
-        setTimeout(setupWSConnection, 500);
+        setupWSConnection();
     };
     
     wsConnection.onmessage = (e) => {

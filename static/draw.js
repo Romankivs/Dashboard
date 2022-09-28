@@ -35,6 +35,12 @@ function resize() {
     canvas.height = window.innerHeight;
 }
 
+function resizeWithoutClear() {
+    let img = context.getImageData(0, 0, context.width, context.height);
+    resize();
+    context.putImageData(img);
+}
+
 function move(e) {
     if (e.buttons) {
         if (!lastPoint) {
@@ -71,7 +77,7 @@ function key(e) {
     }
 }
 
-window.onresize = resize;
+window.onresize = resizeWithoutClear;
 window.onmousemove = move;
 window.onkeydown = key;
 window.onmouseup = up;
